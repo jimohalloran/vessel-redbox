@@ -1,18 +1,23 @@
-FROM node:latest
+FROM centos:7
 
-LABEL maintainer="Chris Fidao"
+# CentOS port by Jim O'Halloran.  Based on work by Chris Fidao in the
+# Shipping Docker Vessel project.
+LABEL maintainer="Jim O'Halloran <jim@jimohalloran.com>"
 
 WORKDIR /var/www/html
 
 ARG uid=999
 
-RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
-    && echo "deb http://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list \
-    && apt-get update \
-    && apt-get install -y git yarn \
-    && apt-get -y autoremove \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+ADD setup_10.x /tmp/setup_10.x
+ADD yarn.repo /etc/yum.repos.d/yarn.repo
 
+RUN yum install -y gcc-c++ make git \
+    && chmod a+x /tmp/setup_10.x \
+    && /tmp/setup_10.x \
+    && rm /tmp/setup_10.x \
+    && yum install -y nodejs yarn \
+    && yum clean all
 
-RUN usermod -u $uid node
+RUN useradd -u $uid node
+
+CMD [ "node" ]

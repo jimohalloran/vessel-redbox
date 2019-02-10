@@ -188,6 +188,21 @@ if [ $# -gt 0 ]; then
                 composer "$@"
         fi
 
+    # If "deployer" (or "dep") is used, pass-thru to "dep"
+    # inside a new container
+    elif [ "$1" == "deployer" ] || [ "$1" == "dep" ]; then
+        shift 1
+        if [ "$EXEC" == "yes" ]; then
+            $COMPOSE exec \
+                -u vessel \
+                app \
+                vendor/bin/dep "$@"
+        else
+            $COMPOSE run --rm \
+                app \
+                vendor/bin/dep "$@"
+        fi
+
     # If "test" is used, run unit tests,
     # pass-thru any extra arguments to php-unit
     elif [ "$1" == "test" ]; then
@@ -266,7 +281,7 @@ if [ $# -gt 0 ]; then
 
     # If "mysql" is used, run mysql
     # from our mysql container
-    elif [ "$1" == "mysql" ]; then
+    elif [ "$1" == "mysql" ] || [ "$1" == "dbconsole" ]; then
         shift 1
         if [ "$EXEC" == "yes" ]; then
             $COMPOSE exec \
@@ -281,7 +296,7 @@ if [ $# -gt 0 ]; then
     # inside a new container
     # e.g.: ./vessel ssh app
     # e.g.: ./vessel ssh mysql
-    elif [ "$1" == "ssh" ]; then
+    elif [ "$1" == "ssh" ] || [ "$1" == "shell" ]; then
         shift 1
         if [ "$EXEC" == "yes" ] && [ "$1" != "node" ]; then
             $COMPOSE exec \
@@ -291,6 +306,19 @@ if [ $# -gt 0 ]; then
         else
             $COMPOSE run --rm \
                 $1 \
+                bash
+        fi
+
+    elif [ "$1" == "rootshell" ]; then
+        if [ "$EXEC" == "yes" ]; then
+            $COMPOSE exec \
+                -u root \
+                app \
+                bash
+        else
+            $COMPOSE run --rm \
+                -u root \
+                app \
                 bash
         fi
 
